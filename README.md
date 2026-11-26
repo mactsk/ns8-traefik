@@ -604,6 +604,44 @@ Output:
 {"proxies": ["192.168.100.1"], "depth": 1}
 ```
 
+## Access log
+
+Traefik writes an access log line for every HTTP request to the
+journal. The module keeps the `User-Agent` request header in that
+line, and drops the other headers. CrowdSec uses it to detect bad
+user agents, like known scanners and bots. Wazuh receives it too.
+
+The User-Agent is personal data. It stays in the journal, and in Loki
+for its whole retention period. To stop logging it, edit the Traefik
+static configuration, the `traefik.yaml` file in the module state
+directory (for example `/home/traefik1/.config/state/traefik.yaml`).
+Replace the `accessLog` section with:
+
+```yaml
+accessLog: {}
+```
+
+Then restart the `traefik.service` user unit of the module, to apply
+the change. The restart interrupts HTTP traffic for a few seconds.
+Every node runs its own Traefik instance: edit the file of each of
+them.
+
+The setting is kept on module updates. A restore does not change the
+`traefik.yaml` file of the existing instance. On a new node, for
+example after a disaster recovery, edit the file again.
+
+To log the User-Agent again, restore the module default, then restart
+Traefik:
+
+```yaml
+accessLog:
+  fields:
+    headers:
+      defaultMode: drop
+      names:
+        User-Agent: keep
+```
+
 ## Running tests locally
 
 This module uses the NS8 standard testing infrastructure. For instructions on how to run the test suite locally, refer to the [Running tests locally](https://github.com/NethServer/ns8-github-actions/blob/v1/README.md#running-tests-locally) section of the ns8-github-actions repository.
