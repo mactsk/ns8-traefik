@@ -604,6 +604,44 @@ Output:
 {"proxies": ["192.168.100.1"], "depth": 1}
 ```
 
+## Disable telemetry
+
+Traefik checks once a day for new releases on `update.traefik.io`, as
+described in the Traefik
+[data collection](https://doc.traefik.io/traefik/contributing/data-collection/)
+documentation. The first check runs 10 minutes after Traefik starts.
+If a new release exists, Traefik writes a warning in its log. If
+`update.traefik.io` is not reachable, Traefik writes a warning
+instead. The anonymous usage statistics are disabled by Traefik
+default, and the module does not enable them.
+
+The module keeps the check enabled, as set by the Traefik default. To
+disable it, edit the Traefik static configuration, the `traefik.yaml`
+file in the module state directory (for example
+`/home/traefik1/.config/state/traefik.yaml`). Add the `global` section
+at the top level of the file, or the `checkNewVersion` key if the
+section already exists:
+
+```yaml
+global:
+  checkNewVersion: false
+```
+
+Then restart the `traefik.service` user unit of the module, to apply
+the change. The restart interrupts HTTP traffic for a few seconds.
+Every node runs its own Traefik instance: edit the file of each of
+them.
+
+Traefik reads its static configuration only from the `traefik.yaml`
+file: command line flags and `TRAEFIK_*` environment variables, for
+example added to `PODMAN_RUN_OPTS`, are ignored.
+
+The setting is kept on module updates, but it is not restored from a
+backup: after a restore, edit the file again.
+
+To revert to the default, remove the `checkNewVersion` key, and the
+`global` section if it is left empty, then restart Traefik.
+
 ## Access log
 
 Traefik writes an access log line for every HTTP request to the
